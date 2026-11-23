@@ -48,3 +48,18 @@ def test_clear_fault_memory(ecu, tester):
 def test_unsupported_service_gives_negative_response(tester):
     r = tester._diag([0x22, 0xF1, 0x90])  # ReadDataByIdentifier, hier nicht implementiert
     assert list(r[:3]) == [0x7F, 0x22, 0x11]
+
+
+import pytest
+
+
+@pytest.mark.parametrize("temperatur, fehler_erwartet", [
+    (59, 0),
+    (60, 0),
+    (61, 1),
+])
+def test_overtemperature_threshold(ecu, tester, temperatur, fehler_erwartet):
+    ecu.set_temperature(temperatur)
+    frames = tester.collect("BMS_Faults", duration_s=0.5)
+    letzter_wert = frames[-1][1]["OverTemperature"]
+    assert letzter_wert == fehler_erwartet
